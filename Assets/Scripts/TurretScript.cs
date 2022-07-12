@@ -20,6 +20,9 @@ public class TurretScript : MonoBehaviour
   [Range(0f, 180f)]
   float maxTurnSpeed;
 
+  [SerializeField]
+  GameObject? trailPrefab;
+
   List<GameObject> targets = new List<GameObject>();
   GameObject? target;
   bool isTargetOutOfRange = false;
@@ -63,6 +66,25 @@ public class TurretScript : MonoBehaviour
     }
   }
 
+  IEnumerator ShowProjectileTrailCoroutine(GameObject currentTarget)
+  {
+    if (trailPrefab != null && head != null)
+    {
+      var trail = Instantiate(trailPrefab);
+
+      var lineRenderer = trail.GetComponent<LineRenderer>();
+
+      lineRenderer.SetPositions(new Vector3[] { head.transform.position, currentTarget.transform.position });
+      lineRenderer.enabled = true;
+      lineRenderer.widthCurve = AnimationCurve.Constant(0f, 1f, .1f);
+
+      yield return new WaitForSeconds(.5f);
+
+      // TODO: Pool trail
+      Destroy(trail);
+    }
+  }
+
   void OnTargetDeath()
   {
     UpdateTargets();
@@ -91,9 +113,14 @@ public class TurretScript : MonoBehaviour
     }
   }
 
-  void Shoot(GameObject newTarget)
+  void Shoot(GameObject currentTarget)
   {
-    newTarget.SendMessage(DamageTakenMessage.message, new DamageTakenMessage { damage = 2f, source = gameObject });
+    currentTarget.SendMessage(DamageTakenMessage.message, new DamageTakenMessage { damage = 2f, source = gameObject });
+
+    if (trailPrefab != null)
+    {
+      StartCoroutine(ShowProjectileTrailCoroutine(currentTarget));
+    }
   }
 
   void Aim()
