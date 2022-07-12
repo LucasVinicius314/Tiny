@@ -8,30 +8,92 @@ using UnityEditor;
 
 public class TurretScript : MonoBehaviour
 {
-  [SerializeField]
-  [Min(0f)]
-  float viewRange;
-
-  [SerializeField]
-  [Range(0f, 180f)]
-  float maxPitchAngle;
-
-  [SerializeField]
-  [Range(0f, 180f)]
-  float maxTurnSpeed;
+  [Header("References")]
 
   [SerializeField]
   GameObject? trailPrefab;
 
+  [Header("Rotations")]
+
+  [Header("Elevation")]
+  [Tooltip("Speed at which the turret's guns elevate up and down.")]
+  public float ElevationSpeed = 30f;
+
+  [Tooltip("Highest upwards elevation the turret's barrels can aim.")]
+  public float MaxElevation = 60f;
+
+  [Tooltip("Lowest downwards elevation the turret's barrels can aim.")]
+  public float MaxDepression = 5f;
+
+  [Header("Traverse")]
+
+  [Tooltip("Speed at which the turret can rotate left/right.")]
+  public float TraverseSpeed = 60f;
+
+  [Tooltip("When true, the turret can only rotate horizontally with the given limits.")]
+  [SerializeField] private bool hasLimitedTraverse = false;
+  [Range(0, 179)] public float LeftLimit = 120f;
+  [Range(0, 179)] public float RightLimit = 120f;
+
+  [Header("Behavior")]
+
+  [Tooltip("When idle, the turret does not aim at anything and simply points forwards.")]
+  public bool IsIdle = false;
+
+  // [Tooltip("Position the turret will aim at when not idle. Set this to whatever you want" +
+  //     "the turret to actively aim at.")]
+  // public Vector3 AimPosition = Vector3.zero;
+
+  [Tooltip("When the turret is within this many degrees of the target, it is considered aimed.")]
+  [SerializeField] private float aimedThreshold = 5f;
+  private float limitedTraverseAngle = 0f;
+
+  [Header("Debug")]
+  public bool DrawDebugRay = true;
+  public bool DrawDebugArcs = false;
+
+  private float angleToTarget = 0f;
+  private float elevation = 0f;
+
+  private bool isAimed = false;
+  private bool isBaseAtRest = false;
+  private bool isBarrelAtRest = false;
+
+  /// <summary>
+  /// True when the turret cannot rotate freely in the horizontal axis.
+  /// </summary>
+  public bool HasLimitedTraverse { get { return hasLimitedTraverse; } }
+
+  /// <summary>
+  /// True when the turret is idle and at its resting position.
+  /// </summary>
+  public bool IsTurretAtRest { get { return isBarrelAtRest && isBaseAtRest; } }
+
+  /// <summary>
+  /// True when the turret is aimed at the given <see cref="AimPosition"/>. When the turret
+  /// is idle, this is never true.
+  /// </summary>
+  public bool IsAimed { get { return isAimed; } }
+
+  /// <summary>
+  /// Angle in degress to the given <see cref="AimPosition"/>. When the turret is idle,
+  /// the angle reports 999.
+  /// </summary>
+  public float AngleToTarget { get { return IsIdle ? 999f : angleToTarget; } }
+
+  [SerializeField]
+  [Min(0f)]
+  float viewRange;
+
   List<GameObject> targets = new List<GameObject>();
   GameObject? target;
-  bool isTargetOutOfRange = false;
-  bool isAimed = false;
-  GameObject? head;
-  GameObject? barrel;
+  Transform? headTransform;
+  Transform? barrelTransform;
 
   void DebugDrawLineToTargets()
   {
+    // TODO: Remove or improve method
+
     foreach (var target in targets)
     {
       if (target == null) continue;
@@ -46,6 +108,7 @@ public class TurretScript : MonoBehaviour
     {
       UpdateTargets();
 
+      // TODO: Variable retargetting delay
       yield return new WaitForSeconds(1f);
     }
   }
@@ -58,6 +121,7 @@ public class TurretScript : MonoBehaviour
       {
         Shoot(target!);
 
+        // TODO: Variable firing rate
         yield return new WaitForSeconds(1f);
       }
       else
@@ -69,16 +133,17 @@ public class TurretScript : MonoBehaviour
 
   IEnumerator ShowProjectileTrailCoroutine(GameObject currentTarget)
   {
-    if (trailPrefab != null && head != null)
+    if (trailPrefab != null && headTransform != null)
     {
       var trail = Instantiate(trailPrefab);
 
       var lineRenderer = trail.GetComponent<LineRenderer>();
 
-      lineRenderer.SetPositions(new Vector3[] { head.transform.position, currentTarget.transform.position });
+      lineRenderer.SetPositions(new Vector3[] { headTransform.transform.position, currentTarget.transform.position });
       lineRenderer.enabled = true;
       lineRenderer.widthCurve = AnimationCurve.Constant(0f, 1f, .1f);
 
+      // TODO: Variable trail despawn rate
       yield return new WaitForSeconds(.5f);
 
       // TODO: Pool trail
@@ -93,7 +158,7 @@ public class TurretScript : MonoBehaviour
 
   bool ShouldShoot()
   {
-    return isAimed && target != null;
+    return IsAimed && target != null;
   }
 
   void UpdateTargets()
@@ -104,18 +169,12 @@ public class TurretScript : MonoBehaviour
 
     targets = potentialTargets.ToList();
 
-    if (targets.Count == 0)
-    {
-      target = null;
-    }
-    else
-    {
-      target = targets.First();
-    }
+    target = targets.Count == 0 ? null : targets.First();
   }
 
   void Shoot(GameObject currentTarget)
   {
+    // TODO: Variable damage
     currentTarget.SendMessage(DamageTakenMessage.message, new DamageTakenMessage { damage = 2f, source = gameObject });
 
     if (trailPrefab != null)
@@ -124,83 +183,257 @@ public class TurretScript : MonoBehaviour
     }
   }
 
-  void AimHead()
+  void RotateTurretToIdle(Transform currentHead)
   {
-    if (target == null || head == null) return;
-
-    var targetPoint = target.transform.position;
-
-    var turret = head.transform;
-    var hardpoint = turret.parent;
-
-    var direction = targetPoint - turret.position;
-    direction = Vector3.ProjectOnPlane(direction, hardpoint.up);
-    var signedAngle = Vector3.SignedAngle(hardpoint.forward, direction, hardpoint.up);
-
-    isTargetOutOfRange = false;
-    if (Mathf.Abs(signedAngle) > maxPitchAngle)
+    // Rotate the base to its default position.
+    if (hasLimitedTraverse)
     {
-      isTargetOutOfRange = true;
-      direction = hardpoint.rotation * Quaternion.Euler(0, Mathf.Clamp(signedAngle, -maxPitchAngle, maxPitchAngle), 0f) *
-                  Vector3.forward;
+      limitedTraverseAngle = Mathf.MoveTowards(
+          limitedTraverseAngle,
+          0f,
+          TraverseSpeed * Time.deltaTime
+        );
+
+      if (Mathf.Abs(limitedTraverseAngle) > Mathf.Epsilon)
+      {
+        currentHead.localEulerAngles = Vector3.up * limitedTraverseAngle;
+      }
+      else
+      {
+        isBaseAtRest = true;
+      }
+    }
+    else
+    {
+      currentHead.rotation = Quaternion.RotateTowards(
+          currentHead.rotation,
+          transform.rotation,
+          TraverseSpeed * Time.deltaTime
+        );
+
+      isBaseAtRest = Mathf.Abs(currentHead.localEulerAngles.y) < Mathf.Epsilon;
     }
 
-    var rotation = Quaternion.LookRotation(direction, hardpoint.up);
-
-    isAimed = false;
-    if (rotation == hardpoint.rotation && !isTargetOutOfRange)
+    if (barrelTransform != null)
     {
-      isAimed = true;
-    }
+      elevation = Mathf.MoveTowards(elevation, 0f, ElevationSpeed * Time.deltaTime);
 
-    hardpoint.rotation = Quaternion.RotateTowards(hardpoint.rotation, rotation, maxTurnSpeed * Time.deltaTime);
+      if (Mathf.Abs(elevation) > Mathf.Epsilon)
+      {
+        barrelTransform.localEulerAngles = Vector3.right * -elevation;
+      }
+      else
+      {
+        isBarrelAtRest = true;
+      }
+    }
+    else
+    {
+      // Barrels automatically at rest if there are no barrels.
+      isBarrelAtRest = true;
+    }
   }
 
-  void OnDrawGizmos()
+  float GetTurretAngleToTarget(Vector3 targetPosition, Transform currentHead)
   {
+    var angle = 999f;
+
+    if (barrelTransform != null)
+    {
+      angle = Vector3.Angle(targetPosition - barrelTransform.position, barrelTransform.forward);
+    }
+    else
+    {
+      var flattenedTarget = Vector3.ProjectOnPlane(
+          targetPosition - currentHead.position,
+          currentHead.up
+        );
+
+      angle = Vector3.Angle(
+          flattenedTarget - currentHead.position,
+          currentHead.forward
+        );
+    }
+
+    return angle;
+  }
+
+  void RotateBarrelsToFaceTarget(Vector3 targetPosition, Transform currentHead, Transform currentBarrel)
+  {
+    var localTargetPos = currentHead.InverseTransformDirection(targetPosition - currentBarrel.position);
+    var flattenedVecForBarrels = Vector3.ProjectOnPlane(localTargetPos, Vector3.up);
+
+    var targetElevation = Vector3.Angle(flattenedVecForBarrels, localTargetPos);
+    targetElevation *= Mathf.Sign(localTargetPos.y);
+
+    targetElevation = Mathf.Clamp(targetElevation, -MaxDepression, MaxElevation);
+    elevation = Mathf.MoveTowards(elevation, targetElevation, ElevationSpeed * Time.deltaTime);
+
+    if (Mathf.Abs(elevation) > Mathf.Epsilon)
+    {
+      currentBarrel.localEulerAngles = Vector3.right * -elevation;
+    }
 
 #if UNITY_EDITOR
-    if (head == null) return;
-
-    var range = 20f;
-    var dashLineSize = 2f;
-    var turret = head.transform;
-    var origin = turret.position;
-    var hardpoint = turret.parent;
-
-    if (!hardpoint) return;
-    var from = Quaternion.AngleAxis(-maxPitchAngle, hardpoint.up) * hardpoint.forward;
-
-    Handles.color = new Color(0, 1, 0, .2f);
-    Handles.DrawSolidArc(origin, turret.up, from, maxPitchAngle * 2, range);
-
-    if (target == null) return;
-
-    var projection = Vector3.ProjectOnPlane(target.transform.position - turret.position, hardpoint.up);
-
-    // projection line
-    Handles.color = Color.white;
-    Handles.DrawDottedLine(target.transform.position, turret.position + projection, dashLineSize);
-
-    // do not draw target indicator when out of angle
-    if (Vector3.Angle(hardpoint.forward, projection) > maxPitchAngle) return;
-
-    // target line
-    Handles.color = Color.red;
-    Handles.DrawLine(turret.position, turret.position + projection);
-
-    // range line
-    Handles.color = Color.green;
-    Handles.DrawWireArc(origin, turret.up, from, maxPitchAngle * 2, projection.magnitude);
-    Handles.DrawSolidDisc(turret.position + projection, turret.up, .5f);
+    if (DrawDebugRay)
+    {
+      Debug.DrawRay(currentBarrel.position, currentBarrel.forward * localTargetPos.magnitude, Color.red);
+    }
 #endif
+  }
+
+  void RotateBaseToFaceTarget(Vector3 targetPosition, Transform currentHead)
+  {
+    var turretUp = transform.up;
+
+    var vecToTarget = targetPosition - currentHead.position;
+    var flattenedVecForBase = Vector3.ProjectOnPlane(vecToTarget, turretUp);
+
+    if (hasLimitedTraverse)
+    {
+      var turretForward = transform.forward;
+      var targetTraverse = Vector3.SignedAngle(turretForward, flattenedVecForBase, turretUp);
+
+      targetTraverse = Mathf.Clamp(targetTraverse, -LeftLimit, RightLimit);
+      limitedTraverseAngle = Mathf.MoveTowards(
+          limitedTraverseAngle,
+          targetTraverse,
+          TraverseSpeed * Time.deltaTime
+        );
+
+      if (Mathf.Abs(limitedTraverseAngle) > Mathf.Epsilon)
+      {
+        currentHead.localEulerAngles = Vector3.up * limitedTraverseAngle;
+      }
+    }
+    else
+    {
+      currentHead.rotation = Quaternion.RotateTowards(
+          Quaternion.LookRotation(currentHead.forward, turretUp),
+          Quaternion.LookRotation(flattenedVecForBase, turretUp),
+          TraverseSpeed * Time.deltaTime
+        );
+    }
+
+#if UNITY_EDITOR
+    if (DrawDebugRay && barrelTransform == null)
+    {
+      Debug.DrawRay(currentHead.position,
+          currentHead.forward * flattenedVecForBase.magnitude,
+          Color.red
+        );
+    }
+#endif
+  }
+
+
+#if UNITY_EDITOR
+  // This should probably go in an Editor script, but dealing with Editor scripts
+  // is a pain in the butt so I'd rather not.
+  void OnDrawGizmosSelected()
+  {
+    if (!DrawDebugArcs) return;
+
+    if (headTransform != null)
+    {
+      const float kArcSize = 10f;
+      var colorTraverse = new Color(1f, .5f, .5f, .1f);
+      var colorElevation = new Color(.5f, 1f, .5f, .1f);
+      var colorDepression = new Color(.5f, .5f, 1f, .1f);
+
+      var arcRoot = barrelTransform != null ? barrelTransform : headTransform;
+
+      // Red traverse arc
+      UnityEditor.Handles.color = colorTraverse;
+      if (hasLimitedTraverse)
+      {
+        UnityEditor.Handles.DrawSolidArc(
+            arcRoot.position, headTransform.up,
+            transform.forward, RightLimit,
+            kArcSize
+          );
+        UnityEditor.Handles.DrawSolidArc(
+            arcRoot.position, headTransform.up,
+            transform.forward, -LeftLimit,
+            kArcSize
+          );
+      }
+      else
+      {
+        UnityEditor.Handles.DrawSolidArc(
+            arcRoot.position, headTransform.up,
+            transform.forward, 360f,
+            kArcSize
+          );
+      }
+
+      if (barrelTransform != null)
+      {
+        // Green elevation arc
+        UnityEditor.Handles.color = colorElevation;
+        UnityEditor.Handles.DrawSolidArc(
+            barrelTransform.position, barrelTransform.right,
+            headTransform.forward, -MaxElevation,
+            kArcSize
+          );
+
+        // Blue depression arc
+        UnityEditor.Handles.color = colorDepression;
+        UnityEditor.Handles.DrawSolidArc(
+            barrelTransform.position, barrelTransform.right,
+            headTransform.forward, MaxDepression,
+            kArcSize
+          );
+      }
+    }
+  }
+#endif
+
+  void Aim()
+  {
+    if (headTransform == null) return;
+
+    if (IsIdle)
+    {
+      if (!IsTurretAtRest)
+      {
+        RotateTurretToIdle(headTransform);
+      }
+
+      isAimed = false;
+    }
+    else
+    {
+      if (target == null) return;
+
+      var aimPosition = target.transform.position;
+
+      RotateBaseToFaceTarget(aimPosition, headTransform);
+
+      if (barrelTransform != null)
+      {
+        RotateBarrelsToFaceTarget(aimPosition, headTransform, barrelTransform);
+      }
+
+      // Turret is considered "aimed" when it's pointed at the target.
+      angleToTarget = GetTurretAngleToTarget(aimPosition, headTransform);
+
+      // Turret is considered "aimed" when it's pointed at the target.
+      isAimed = angleToTarget < aimedThreshold;
+
+      isBarrelAtRest = false;
+      isBaseAtRest = false;
+    }
+  }
+
+  private void Awake()
+  {
+    headTransform = transform.Find("Head");
+    barrelTransform = headTransform?.Find("Barrel");
   }
 
   void Start()
   {
-    head = transform.Find("Head")?.gameObject;
-    barrel = transform.Find("Barrel")?.gameObject;
-
     StartCoroutine(AutoUpdateTargetsCoroutine());
     StartCoroutine(AutoShootingCoroutine());
   }
@@ -209,6 +442,6 @@ public class TurretScript : MonoBehaviour
   {
     DebugDrawLineToTargets();
 
-    AimHead();
+    Aim();
   }
 }
