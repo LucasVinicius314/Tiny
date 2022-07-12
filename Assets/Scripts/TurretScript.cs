@@ -28,6 +28,7 @@ public class TurretScript : MonoBehaviour
   bool isTargetOutOfRange = false;
   bool isAimed = false;
   GameObject? head;
+  GameObject? barrel;
 
   void DebugDrawLineToTargets()
   {
@@ -123,7 +124,7 @@ public class TurretScript : MonoBehaviour
     }
   }
 
-  void Aim()
+  void AimHead()
   {
     if (target == null || head == null) return;
 
@@ -147,12 +148,12 @@ public class TurretScript : MonoBehaviour
     var rotation = Quaternion.LookRotation(direction, hardpoint.up);
 
     isAimed = false;
-    if (rotation == transform.rotation && !isTargetOutOfRange)
+    if (rotation == hardpoint.rotation && !isTargetOutOfRange)
     {
       isAimed = true;
     }
 
-    transform.rotation = Quaternion.RotateTowards(transform.rotation, rotation, maxTurnSpeed * Time.deltaTime);
+    hardpoint.rotation = Quaternion.RotateTowards(hardpoint.rotation, rotation, maxTurnSpeed * Time.deltaTime);
   }
 
   void OnDrawGizmos()
@@ -198,6 +199,7 @@ public class TurretScript : MonoBehaviour
   void Start()
   {
     head = transform.Find("Head")?.gameObject;
+    barrel = transform.Find("Barrel")?.gameObject;
 
     StartCoroutine(AutoUpdateTargetsCoroutine());
     StartCoroutine(AutoShootingCoroutine());
@@ -207,6 +209,6 @@ public class TurretScript : MonoBehaviour
   {
     DebugDrawLineToTargets();
 
-    Aim();
+    AimHead();
   }
 }
