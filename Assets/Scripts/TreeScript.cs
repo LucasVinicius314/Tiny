@@ -12,12 +12,7 @@ public class TreeScript : MonoBehaviour
     Generate(5, gameObject);
   }
 
-  void Update()
-  {
-
-  }
-
-  void Generate(int level, GameObject localParent, float offset = 0, float yaw = 0, float pitch = 0)
+  void Generate(int level, GameObject localParent, float offset = 0f, float yaw = 0f, float pitch = 0f)
   {
     var aspectRatio = 4f;
     var height = aspectRatio * level;
@@ -35,8 +30,8 @@ public class TreeScript : MonoBehaviour
 
       leavesModel.name = "Leaves";
       leavesModel.transform.SetParent(branch.transform, false);
-      leavesModel.transform.localScale = Vector3.one * Random.Range(6, 10) * 2;
-      leavesModel.transform.Translate(Vector3.up * (height / 2), Space.Self);
+      leavesModel.transform.localScale = Vector3.one * Random.Range(6f, 10f) * 2f;
+      leavesModel.transform.Translate(Vector3.up * (height / 2f), Space.Self);
 
       return;
     }
@@ -45,18 +40,18 @@ public class TreeScript : MonoBehaviour
 
     model.name = "Model";
     model.transform.SetParent(branch.transform, false);
-    model.transform.localScale = new Vector3 { x = 1, y = aspectRatio, z = 1 } * level;
+    model.transform.localScale = new Vector3 { x = 1f, y = aspectRatio, z = 1f } * level;
     model.transform.Translate(Vector3.up * (height / 2), Space.Self);
 
     var branches = Random.Range(1, 4);
 
     var newYaw = Random.rotation.eulerAngles.y;
 
-    var yawStep = 360 / branches;
+    var yawStep = 360f / branches;
 
     for (int index = 0; index <= branches; index++)
     {
-      Generate(level - 1, branch, height, newYaw + index * (yawStep), 30);
+      Generate(level - 1, branch, height, newYaw + index * (yawStep), 30f);
     }
   }
 }
