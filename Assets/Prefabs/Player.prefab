@@ -506,7 +506,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvasGameObject: {fileID: 7947655545775609307}
-  turretPrefabs: []
+  uiTilePrefab: {fileID: 7090656519805683952, guid: 0b7cb1cf79c175c4f819eae33a82addc, type: 3}
+  turretPrefabs:
+  - {fileID: 8734954106702610038, guid: ee53f957feb7a3a42a04edeedb512c53, type: 3}
 --- !u!114 &859717302637679343
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -759,8 +761,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2413641631653710885}
   - component: {fileID: 3479679633440506087}
-  - component: {fileID: 1556132242773686773}
   - component: {fileID: 2032021663490341705}
+  - component: {fileID: 6311491153354633937}
   m_Layer: 0
   m_Name: Body
   m_TagString: Untagged
@@ -795,36 +797,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2649850744202980317}
   m_CullTransparentMesh: 1
---- !u!114 &1556132242773686773
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2649850744202980317}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &2032021663490341705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -841,10 +813,34 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: -1
-  m_PreferredHeight: 1539.57
+  m_PreferredHeight: 2000
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &6311491153354633937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2649850744202980317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding:
+    m_Left: 16
+    m_Right: 16
+    m_Top: 16
+    m_Bottom: 16
+  m_ChildAlignment: 0
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 378.6666, y: 378.6666}
+  m_Spacing: {x: 16, y: 16}
+  m_Constraint: 0
+  m_ConstraintCount: 1
 --- !u!1 &3109609231556626581
 GameObject:
   m_ObjectHideFlags: 0

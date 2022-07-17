@@ -9,7 +9,6 @@ using UnityEngine.InputSystem;
 // TODO: Add inventory.
 // TODO: Add jumping.
 // TODO: Add sprinting.
-// TODO: Add Poppins as the main font.
 
 public class PlayerScript : MonoBehaviour
 {
@@ -25,7 +24,7 @@ public class PlayerScript : MonoBehaviour
   [Range(60f, 120f)]
   [SerializeField]
   float fieldOfView = 120f;
-  [Range(60f, 120f)]
+  [Range(10f, 100f)]
   [SerializeField]
   float zoomedInFieldOfView = 30f;
 
@@ -39,6 +38,19 @@ public class PlayerScript : MonoBehaviour
   float lookPitch;
   bool isMenuOpen = false;
   bool isZoomed = false;
+
+  void BeginTurretPlacement(GameObject prefab)
+  {
+    if (menuScript == null) return;
+
+    menuScript.CloseMenu();
+
+    isMenuOpen = false;
+
+    Utils.UnlockCursor();
+
+    // TODO: Turret placement
+  }
 
   void HandleLookInput()
   {
@@ -90,6 +102,7 @@ public class PlayerScript : MonoBehaviour
     movementInputVector = value;
   }
 
+  // TODO: Rename OpenMenu to ToggleMenu to keep a more appropiate name.
   public void OpenMenu(InputAction.CallbackContext context)
   {
     if (!context.performed) return;
