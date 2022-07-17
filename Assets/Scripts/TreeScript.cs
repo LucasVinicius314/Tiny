@@ -1,19 +1,19 @@
 using UnityEngine;
 
+#nullable enable
+
 public class TreeScript : MonoBehaviour
 {
+  // TODO: Rename to match prefab naming convention.
   [SerializeField]
-  GameObject woodChunk;
+  GameObject? woodChunk;
   [SerializeField]
-  GameObject leavesChunk;
-
-  void Start()
-  {
-    Generate(5, gameObject);
-  }
+  GameObject? leavesChunk;
 
   void Generate(int level, GameObject localParent, float offset = 0f, float yaw = 0f, float pitch = 0f)
   {
+    if (woodChunk == null || leavesChunk == null) return;
+
     var aspectRatio = 4f;
     var height = aspectRatio * level;
 
@@ -53,5 +53,23 @@ public class TreeScript : MonoBehaviour
     {
       Generate(level - 1, branch, height, newYaw + index * (yawStep), 30f);
     }
+  }
+
+  void Awake()
+  {
+    if (woodChunk == null)
+    {
+      Debug.LogError("Wood chunk (GameObject) is null.");
+    }
+
+    if (leavesChunk == null)
+    {
+      Debug.LogError("Leaves chunk (GameObject) is null.");
+    }
+  }
+
+  void Start()
+  {
+    Generate(5, gameObject);
   }
 }

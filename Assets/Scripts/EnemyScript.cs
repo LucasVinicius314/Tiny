@@ -26,14 +26,4 @@ public class EnemyScript : MonoBehaviour
 
     healthPoints = newHealthPoints;
   }
-
-  void Start()
-  {
-
-  }
-
-  void Update()
-  {
-
-  }
 }

@@ -3,11 +3,31 @@ using UnityEngine.InputSystem;
 
 #nullable enable
 
+// TODO: Add camera sway.
+// TODO: Add settings menu.
+// TODO: Add turret placement.
+// TODO: Add inventory.
+// TODO: Add jumping.
+// TODO: Add sprinting.
+// TODO: Add Poppins as the main font.
+
 public class PlayerScript : MonoBehaviour
 {
   [Range(1f, 20f)]
   [SerializeField]
   float lookSensitivity = 10f;
+  [Range(0.001f, 1f)]
+  [SerializeField]
+  float lookSmoothing = .2f;
+  [Range(0.001f, 1f)]
+  [SerializeField]
+  float movementSmoothing = .05f;
+  [Range(60f, 120f)]
+  [SerializeField]
+  float fieldOfView = 120f;
+  [Range(60f, 120f)]
+  [SerializeField]
+  float zoomedInFieldOfView = 30f;
 
   CharacterController? controller;
   Transform? cameraTransform;
@@ -15,41 +35,22 @@ public class PlayerScript : MonoBehaviour
   Vector2 lookInputVector;
   Vector2 processedMovementInputVector;
   Vector2 processedLookInputVector;
+  MenuScript? menuScript;
   float lookPitch;
-  [Range(0.001f, 1f)]
-  [SerializeField]
-  float lookSmoothing = .2f;
-  [Range(0.001f, 1f)]
-  [SerializeField]
-  float movementSmoothing = .05f;
-
-  public void LockCursor()
-  {
-    Cursor.lockState = CursorLockMode.Locked;
-  }
-
-  public void Look(InputAction.CallbackContext context)
-  {
-    var value = context.ReadValue<Vector2>();
-
-    lookInputVector = value;
-  }
-
-  public void Move(InputAction.CallbackContext context)
-  {
-    var value = context.ReadValue<Vector2>();
-
-    movementInputVector = value;
-  }
+  bool isMenuOpen = false;
+  bool isZoomed = false;
 
   void HandleLookInput()
   {
-    processedLookInputVector = Vector2.Lerp(processedLookInputVector, lookInputVector, lookSmoothing);
+    var lerpFactor = isZoomed ? 0.01f : lookSmoothing;
+    var sensitivityMultiplier = isZoomed ? 5f : 10f;
+
+    processedLookInputVector = Vector2.Lerp(processedLookInputVector, lookInputVector, lerpFactor);
 
     var inputVector = processedLookInputVector;
 
-    var x = inputVector.x * lookSensitivity * Time.deltaTime * 10f;
-    var y = inputVector.y * lookSensitivity * Time.deltaTime * 10f;
+    var x = inputVector.x * lookSensitivity * Time.deltaTime * sensitivityMultiplier;
+    var y = inputVector.y * lookSensitivity * Time.deltaTime * sensitivityMultiplier;
 
     lookPitch = Mathf.Clamp(lookPitch - y, -90f, 90f);
 
@@ -75,20 +76,91 @@ public class PlayerScript : MonoBehaviour
     }
   }
 
+  public void Look(InputAction.CallbackContext context)
+  {
+    var value = context.ReadValue<Vector2>();
+
+    lookInputVector = value;
+  }
+
+  public void Move(InputAction.CallbackContext context)
+  {
+    var value = context.ReadValue<Vector2>();
+
+    movementInputVector = value;
+  }
+
+  public void OpenMenu(InputAction.CallbackContext context)
+  {
+    if (!context.performed) return;
+
+    isMenuOpen = !isMenuOpen;
+
+    if (menuScript == null) return;
+
+    if (isMenuOpen)
+    {
+      menuScript.OpenMenu();
+    }
+    else
+    {
+      menuScript.CloseMenu();
+    }
+  }
+
+  public void Zoom(InputAction.CallbackContext context)
+  {
+    if (!context.performed) return;
+
+    var value = context.ReadValueAsButton();
+
+    isZoomed = value;
+
+    if (isZoomed)
+    {
+      Camera.main.fieldOfView = zoomedInFieldOfView;
+    }
+    else
+    {
+      Camera.main.fieldOfView = fieldOfView;
+    }
+  }
+
   void Awake()
   {
     controller = GetComponent<CharacterController>();
+    menuScript = GetComponent<MenuScript>();
     cameraTransform = transform.Find("Camera");
+
+    if (controller == null)
+    {
+      Debug.LogError("Character controller is null.");
+    }
+
+    if (menuScript == null)
+    {
+      Debug.LogError("Menu script is null.");
+    }
+
+    if (cameraTransform == null)
+    {
+      Debug.LogError("Camera (Transform) script is null.");
+    }
   }
 
   void Start()
   {
-    LockCursor();
+    Utils.LockCursor();
+
+    Camera.main.fieldOfView = fieldOfView;
   }
 
   void Update()
   {
-    HandleLookInput();
-    HandleMovementInput();
+    if (!isMenuOpen)
+    {
+      HandleLookInput();
+      HandleMovementInput();
+    }
   }
 }
