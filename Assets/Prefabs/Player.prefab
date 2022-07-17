@@ -310,6 +310,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lookSensitivity: 10
+  lookSmoothing: 0.2
+  movementSmoothing: 0.05
 --- !u!114 &859717302637679343
 MonoBehaviour:
   m_ObjectHideFlags: 0

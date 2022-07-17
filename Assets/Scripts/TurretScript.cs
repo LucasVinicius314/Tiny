@@ -31,8 +31,8 @@ public class TurretScript : MonoBehaviour
 
   [Tooltip("When true, the turret can only rotate horizontally with the given limits.")]
   [SerializeField] private bool hasLimitedTraverse = false;
-  [Range(0, 179)] public float LeftLimit = 120f;
-  [Range(0, 179)] public float RightLimit = 120f;
+  [Range(0f, 179f)] public float LeftLimit = 120f;
+  [Range(0f, 179f)] public float RightLimit = 120f;
 
   [Header("Behavior")]
 

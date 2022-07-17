@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerScript : MonoBehaviour
 {
-  [Range(1, 20)]
+  [Range(1f, 20f)]
   [SerializeField]
   float lookSensitivity = 10f;
 
@@ -13,7 +13,15 @@ public class PlayerScript : MonoBehaviour
   Transform? cameraTransform;
   Vector2 movementInputVector;
   Vector2 lookInputVector;
+  Vector2 processedMovementInputVector;
+  Vector2 processedLookInputVector;
   float lookPitch;
+  [Range(0.001f, 1f)]
+  [SerializeField]
+  float lookSmoothing = .2f;
+  [Range(0.001f, 1f)]
+  [SerializeField]
+  float movementSmoothing = .05f;
 
   public void LockCursor()
   {
@@ -36,8 +44,12 @@ public class PlayerScript : MonoBehaviour
 
   void HandleLookInput()
   {
-    var x = lookInputVector.x * lookSensitivity * Time.deltaTime * 10f;
-    var y = lookInputVector.y * lookSensitivity * Time.deltaTime * 10f;
+    processedLookInputVector = Vector2.Lerp(processedLookInputVector, lookInputVector, lookSmoothing);
+
+    var inputVector = processedLookInputVector;
+
+    var x = inputVector.x * lookSensitivity * Time.deltaTime * 10f;
+    var y = inputVector.y * lookSensitivity * Time.deltaTime * 10f;
 
     lookPitch = Mathf.Clamp(lookPitch - y, -90f, 90f);
 
@@ -51,7 +63,11 @@ public class PlayerScript : MonoBehaviour
 
   void HandleMovementInput()
   {
-    var move = movementInputVector.y * transform.forward + movementInputVector.x * transform.right;
+    processedMovementInputVector = Vector2.Lerp(processedMovementInputVector, movementInputVector, movementSmoothing);
+
+    var inputVector = processedMovementInputVector;
+
+    var move = inputVector.y * transform.forward + inputVector.x * transform.right;
 
     if (controller != null)
     {
