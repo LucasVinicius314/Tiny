@@ -15,6 +15,21 @@ public class MenuScript : MonoBehaviour
   Canvas? canvas;
   GameObject? body;
   List<GameObject> currentUITiles = new List<GameObject>();
+  PlayerScript? playerScript;
+
+  void BeginTurretPlacement(GameObject turretPrefab)
+  {
+    if (playerScript == null)
+    {
+      Debug.Log("Player script (PlayerScript) is null.");
+
+      return;
+    }
+
+    playerScript.SetPlayerStructurePlacementState(
+      new PlayerStructurePlacementState.Placing { prefab = turretPrefab }
+    );
+  }
 
   public void CloseMenu()
   {
@@ -29,6 +44,11 @@ public class MenuScript : MonoBehaviour
         Destroy(item);
       }
     }
+  }
+
+  public void Configure(PlayerScript script)
+  {
+    playerScript = script;
   }
 
   public void OpenMenu()
@@ -46,7 +66,7 @@ public class MenuScript : MonoBehaviour
 
           script.Configure("Basic Turret", () =>
           {
-            Debug.Log("Spawn turret");
+            BeginTurretPlacement(turretPrefab);
           });
 
           currentUITiles.Add(uiTile);

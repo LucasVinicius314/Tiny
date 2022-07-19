@@ -35,9 +35,14 @@ public class PlayerScript : MonoBehaviour
   Vector2 processedMovementInputVector;
   Vector2 processedLookInputVector;
   MenuScript? menuScript;
+  GameObject? placementObject;
   float lookPitch;
   bool isMenuOpen = false;
   bool isZoomed = false;
+
+  PlayerMovementState playerMovementState = new PlayerMovementState.Still();
+  PlayerStructurePlacementState playerStructurePlacementState =
+    new PlayerStructurePlacementState.None();
 
   void BeginTurretPlacement(GameObject prefab)
   {
@@ -50,6 +55,18 @@ public class PlayerScript : MonoBehaviour
     Utils.UnlockCursor();
 
     // TODO: Turret placement
+
+    placementObject = Instantiate(prefab);
+
+    foreach (var t in placementObject.GetComponentsInChildren<Transform>(true))
+    {
+      t.gameObject.layer = Layers.ghost;
+    }
+  }
+
+  PlayerStructurePlacementState GetPlayerStructurePlacementState()
+  {
+    return playerStructurePlacementState;
   }
 
   void HandleLookInput()
@@ -57,18 +74,25 @@ public class PlayerScript : MonoBehaviour
     var lerpFactor = isZoomed ? 0.01f : lookSmoothing;
     var sensitivityMultiplier = isZoomed ? 5f : 10f;
 
-    processedLookInputVector = Vector2.Lerp(processedLookInputVector, lookInputVector, lerpFactor);
+    processedLookInputVector = Vector2.Lerp(
+      processedLookInputVector,
+      lookInputVector,
+      lerpFactor
+    );
 
     var inputVector = processedLookInputVector;
 
-    var x = inputVector.x * lookSensitivity * Time.deltaTime * sensitivityMultiplier;
-    var y = inputVector.y * lookSensitivity * Time.deltaTime * sensitivityMultiplier;
+    var x = inputVector.x * lookSensitivity * Time.deltaTime *
+      sensitivityMultiplier;
+    var y = inputVector.y * lookSensitivity * Time.deltaTime *
+      sensitivityMultiplier;
 
     lookPitch = Mathf.Clamp(lookPitch - y, -90f, 90f);
 
     if (cameraTransform != null)
     {
-      cameraTransform.localRotation = Quaternion.Euler(Vector3.right * lookPitch);
+      cameraTransform.localRotation =
+        Quaternion.Euler(Vector3.right * lookPitch);
     }
 
     transform.Rotate(Vector3.up, x);
@@ -76,15 +100,40 @@ public class PlayerScript : MonoBehaviour
 
   void HandleMovementInput()
   {
-    processedMovementInputVector = Vector2.Lerp(processedMovementInputVector, movementInputVector, movementSmoothing);
+    processedMovementInputVector = Vector2.Lerp(
+      processedMovementInputVector,
+      movementInputVector,
+      movementSmoothing
+    );
 
     var inputVector = processedMovementInputVector;
 
-    var move = inputVector.y * transform.forward + inputVector.x * transform.right;
+    var move = inputVector.y * transform.forward + inputVector.x *
+      transform.right;
 
     if (controller != null)
     {
       controller.SimpleMove(Vector3.ClampMagnitude(move, 1f) * 6f);
+    }
+  }
+
+  void HandleTurretPlacement()
+  {
+    if (placementObject == null || cameraTransform == null) return;
+
+    RaycastHit hit;
+
+    if (
+      Physics.Raycast(
+        cameraTransform.position + cameraTransform.forward,
+        cameraTransform.forward,
+        out hit,
+        10f,
+        LayerMasks.all - LayerMasks.ghost
+      )
+    )
+    {
+      placementObject.transform.position = hit.point;
     }
   }
 
@@ -121,6 +170,13 @@ public class PlayerScript : MonoBehaviour
     }
   }
 
+  public void SetPlayerStructurePlacementState(
+    PlayerStructurePlacementState value
+  )
+  {
+    playerStructurePlacementState = value;
+  }
+
   public void Zoom(InputAction.CallbackContext context)
   {
     if (!context.performed) return;
@@ -144,6 +200,8 @@ public class PlayerScript : MonoBehaviour
     controller = GetComponent<CharacterController>();
     menuScript = GetComponent<MenuScript>();
     cameraTransform = transform.Find("Camera");
+
+    menuScript?.Configure(this);
 
     if (controller == null)
     {
@@ -174,6 +232,8 @@ public class PlayerScript : MonoBehaviour
     {
       HandleLookInput();
       HandleMovementInput();
+
+      HandleTurretPlacement();
     }
   }
 }
