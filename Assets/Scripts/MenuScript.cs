@@ -26,8 +26,18 @@ public class MenuScript : MonoBehaviour
       return;
     }
 
+    var originalPrefab = turretPrefab;
+
+    var currentInstance = Instantiate(original: originalPrefab);
+
+    Utils.SetLayerRecursively(currentInstance, Layers.ghost);
+
     playerScript.SetPlayerStructurePlacementState(
-      new PlayerStructurePlacementState.Placing { prefab = turretPrefab }
+      new PlayerStructurePlacementState.Placing
+      {
+        currentInstance = currentInstance,
+        originalPrefab = originalPrefab,
+      }
     );
   }
 
@@ -35,8 +45,6 @@ public class MenuScript : MonoBehaviour
   {
     if (canvasGameObject != null)
     {
-      Utils.LockCursor();
-
       canvasGameObject.SetActive(false);
 
       foreach (var item in currentUITiles)
@@ -55,8 +63,6 @@ public class MenuScript : MonoBehaviour
   {
     if (canvasGameObject != null)
     {
-      Utils.UnlockCursor();
-
       if (body != null && uiTilePrefab != null)
       {
         foreach (var turretPrefab in turretPrefabs)
@@ -66,7 +72,7 @@ public class MenuScript : MonoBehaviour
 
           script.Configure("Basic Turret", () =>
           {
-            BeginTurretPlacement(turretPrefab);
+            BeginTurretPlacement(turretPrefab: turretPrefab);
           });
 
           currentUITiles.Add(uiTile);

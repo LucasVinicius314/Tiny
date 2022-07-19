@@ -569,7 +569,19 @@ MonoBehaviour:
     m_ActionId: 2ce2980c-23cc-41ae-b345-aec9e0ac6d75
     m_ActionName: Player/Look[/Mouse/delta,/Pen/delta]
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 859717302637679342}
+        m_TargetAssemblyTypeName: PlayerScript, Assembly-CSharp
+        m_MethodName: Fire
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: cb38508c-2cd5-4556-a186-3854ffcfb68f
     m_ActionName: Player/Fire[/Mouse/leftButton]
   - m_PersistentCalls:
@@ -616,7 +628,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 859717302637679342}
         m_TargetAssemblyTypeName: PlayerScript, Assembly-CSharp
-        m_MethodName: OpenMenu
+        m_MethodName: Escape
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -644,6 +656,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 04a60e5a-12ad-451e-8e4a-91741ea29272
     m_ActionName: Player/Zoom[/Keyboard/c]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 859717302637679342}
+        m_TargetAssemblyTypeName: PlayerScript, Assembly-CSharp
+        m_MethodName: Build
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 162e63ce-3fff-41ac-8879-27d4a3126e96
+    m_ActionName: Player/Build[/Keyboard/q]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player

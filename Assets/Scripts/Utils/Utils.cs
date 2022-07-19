@@ -13,4 +13,12 @@ public class Utils
     Cursor.lockState = CursorLockMode.None;
     Cursor.visible = true;
   }
+
+  public static void SetLayerRecursively(GameObject gameObject, int layer)
+  {
+    foreach (var child in gameObject.GetComponentsInChildren<Transform>(true))
+    {
+      child.gameObject.layer = layer;
+    }
+  }
 }

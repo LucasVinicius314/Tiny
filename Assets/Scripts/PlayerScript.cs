@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 
 // TODO: Add camera sway.
 // TODO: Add settings menu.
-// TODO: Add turret placement.
 // TODO: Add inventory.
 // TODO: Add jumping.
 // TODO: Add sprinting.
@@ -35,48 +34,118 @@ public class PlayerScript : MonoBehaviour
   Vector2 processedMovementInputVector;
   Vector2 processedLookInputVector;
   MenuScript? menuScript;
-  GameObject? placementObject;
   float lookPitch;
-  bool isMenuOpen = false;
   bool isZoomed = false;
 
+  PlayerMenuState playerMenuState = new PlayerMenuState.None();
   PlayerMovementState playerMovementState = new PlayerMovementState.Still();
   PlayerStructurePlacementState playerStructurePlacementState =
     new PlayerStructurePlacementState.None();
 
-  void BeginTurretPlacement(GameObject prefab)
+  void BeginTurretPlacement()
   {
-    if (menuScript == null) return;
-
-    menuScript.CloseMenu();
-
-    isMenuOpen = false;
-
-    Utils.UnlockCursor();
-
-    // TODO: Turret placement
-
-    placementObject = Instantiate(prefab);
-
-    foreach (var t in placementObject.GetComponentsInChildren<Transform>(true))
+    if (menuScript != null)
     {
-      t.gameObject.layer = Layers.ghost;
+      menuScript.CloseMenu();
+    }
+
+    SetPlayerMenuState(new PlayerMenuState.None());
+  }
+
+  public void Build(InputAction.CallbackContext context)
+  {
+    if (!context.performed) return;
+
+    if (playerMenuState is PlayerMenuState.None)
+    {
+      SetPlayerMenuState(new PlayerMenuState.Build());
+    }
+    else if (playerMenuState is PlayerMenuState.Build)
+    {
+      if (menuScript != null)
+      {
+        menuScript.CloseMenu();
+      }
+
+      SetPlayerMenuState(new PlayerMenuState.None());
     }
   }
 
-  PlayerStructurePlacementState GetPlayerStructurePlacementState()
+  public void Escape(InputAction.CallbackContext context)
+  {
+    if (!context.performed) return;
+
+    if (playerMenuState is PlayerMenuState.None &&
+      playerStructurePlacementState is PlayerStructurePlacementState.None)
+    {
+      // TODO: Settings
+    }
+    else if (playerMenuState is PlayerMenuState.Build)
+    {
+      if (menuScript != null)
+      {
+        menuScript.CloseMenu();
+      }
+
+      SetPlayerMenuState(new PlayerMenuState.None());
+    }
+    else if (
+      playerStructurePlacementState is PlayerStructurePlacementState.Placing
+    )
+    {
+      Destroy(
+        (
+          playerStructurePlacementState as PlayerStructurePlacementState.Placing
+        )!.currentInstance
+      );
+
+      SetPlayerStructurePlacementState(
+        new PlayerStructurePlacementState.None()
+      );
+    }
+  }
+
+  public void Fire(InputAction.CallbackContext context)
+  {
+    if (!context.performed) return;
+
+    if (playerStructurePlacementState is PlayerStructurePlacementState.None)
+    {
+      // TODO: Action
+    }
+    else if (
+      playerStructurePlacementState is PlayerStructurePlacementState.Placing
+    )
+    {
+      PlaceTurret(
+        (
+          playerStructurePlacementState as PlayerStructurePlacementState.Placing
+        )!.currentInstance
+      );
+    }
+  }
+
+  public PlayerMenuState GetPlayerMenuState()
+  {
+    return playerMenuState;
+  }
+
+  public PlayerStructurePlacementState GetPlayerStructurePlacementState()
   {
     return playerStructurePlacementState;
   }
 
   void HandleLookInput()
   {
+    var targetInputVector = playerMenuState is PlayerMenuState.None ?
+      lookInputVector : Vector2.zero;
+
     var lerpFactor = isZoomed ? 0.01f : lookSmoothing;
     var sensitivityMultiplier = isZoomed ? 5f : 10f;
 
     processedLookInputVector = Vector2.Lerp(
       processedLookInputVector,
-      lookInputVector,
+      targetInputVector,
       lerpFactor
     );
 
@@ -100,9 +169,12 @@ public class PlayerScript : MonoBehaviour
 
   void HandleMovementInput()
   {
+    var targetInputVector = playerMenuState is PlayerMenuState.None ?
+      movementInputVector : Vector2.zero;
+
     processedMovementInputVector = Vector2.Lerp(
       processedMovementInputVector,
-      movementInputVector,
+      targetInputVector,
       movementSmoothing
     );
 
@@ -119,7 +191,11 @@ public class PlayerScript : MonoBehaviour
 
   void HandleTurretPlacement()
   {
-    if (placementObject == null || cameraTransform == null) return;
+    if (
+      !(playerStructurePlacementState
+        is PlayerStructurePlacementState.Placing) ||
+        cameraTransform == null
+      ) return;
 
     RaycastHit hit;
 
@@ -133,7 +209,8 @@ public class PlayerScript : MonoBehaviour
       )
     )
     {
-      placementObject.transform.position = hit.point;
+      (playerStructurePlacementState as PlayerStructurePlacementState.Placing)!
+        .currentInstance.transform.position = hit.point;
     }
   }
 
@@ -151,22 +228,29 @@ public class PlayerScript : MonoBehaviour
     movementInputVector = value;
   }
 
-  // TODO: Rename OpenMenu to ToggleMenu to keep a more appropiate name.
-  public void OpenMenu(InputAction.CallbackContext context)
+  void PlaceTurret(GameObject turret)
   {
-    if (!context.performed) return;
+    Utils.SetLayerRecursively(turret, Layers.defaultLayer);
 
-    isMenuOpen = !isMenuOpen;
+    SetPlayerStructurePlacementState(new PlayerStructurePlacementState.None());
+  }
 
-    if (menuScript == null) return;
+  public void SetPlayerMenuState(PlayerMenuState value)
+  {
+    playerMenuState = value;
 
-    if (isMenuOpen)
+    if (value is PlayerMenuState.None)
     {
-      menuScript.OpenMenu();
+      Utils.LockCursor();
     }
-    else
+    else if (value is PlayerMenuState.Build)
     {
-      menuScript.CloseMenu();
+      if (menuScript != null)
+      {
+        menuScript.OpenMenu();
+
+        Utils.UnlockCursor();
+      }
     }
   }
 
@@ -175,6 +259,15 @@ public class PlayerScript : MonoBehaviour
   )
   {
     playerStructurePlacementState = value;
+
+    if (value is PlayerStructurePlacementState.None)
+    {
+
+    }
+    else if (value is PlayerStructurePlacementState.Placing)
+    {
+      BeginTurretPlacement();
+    }
   }
 
   public void Zoom(InputAction.CallbackContext context)
@@ -221,19 +314,16 @@ public class PlayerScript : MonoBehaviour
 
   void Start()
   {
-    Utils.LockCursor();
-
     Camera.main.fieldOfView = fieldOfView;
+
+    SetPlayerMenuState(new PlayerMenuState.None());
   }
 
   void Update()
   {
-    if (!isMenuOpen)
-    {
-      HandleLookInput();
-      HandleMovementInput();
+    HandleLookInput();
+    HandleMovementInput();
 
-      HandleTurretPlacement();
-    }
+    HandleTurretPlacement();
   }
 }

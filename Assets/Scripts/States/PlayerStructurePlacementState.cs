@@ -6,6 +6,7 @@ public abstract class PlayerStructurePlacementState
 
   public class Placing : PlayerStructurePlacementState
   {
-    public GameObject prefab;
+    public GameObject originalPrefab;
+    public GameObject currentInstance;
   }
 }

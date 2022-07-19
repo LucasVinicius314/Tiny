@@ -33,7 +33,16 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "OpenMenu",
+                    "name": "Zoom",
+                    "type": "Button",
+                    "id": "04a60e5a-12ad-451e-8e4a-91741ea29272",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Escape",
                     "type": "Button",
                     "id": "92077c1e-4f53-4cd6-9a82-5de745e0bb40",
                     "expectedControlType": "Button",
@@ -42,9 +51,9 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Zoom",
+                    "name": "Build",
                     "type": "Button",
-                    "id": "04a60e5a-12ad-451e-8e4a-91741ea29272",
+                    "id": "162e63ce-3fff-41ac-8879-27d4a3126e96",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -274,23 +283,34 @@
                 },
                 {
                     "name": "",
-                    "id": "71afa4a8-26a4-4f69-8235-d5052172d78d",
-                    "path": "<Keyboard>/q",
-                    "interactions": "Press",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "OpenMenu",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "219fc225-e2db-4e92-906d-01dee9f611d7",
                     "path": "<Keyboard>/c",
                     "interactions": "Press(behavior=2)",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f961f070-2208-4d2a-8e2a-119cd0568cb0",
+                    "path": "<Keyboard>/q",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Build",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "71afa4a8-26a4-4f69-8235-d5052172d78d",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Escape",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
